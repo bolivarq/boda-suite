@@ -41,15 +41,17 @@ const Login = ({ onLogin }) => {
         // Llamar callback de login exitoso
         onLogin(data.token, data.user)
       } else if (response) {
-        // Intentar parsear como JSON, si falla usar texto plano
+        // Leer el cuerpo de la respuesta una sola vez
+        const responseText = await response.text()
         let errorMessage = 'Error de autenticación'
+        
         try {
-          const errorData = await response.json()
+          // Intentar parsear como JSON
+          const errorData = JSON.parse(responseText)
           errorMessage = errorData.error || errorMessage
         } catch (jsonError) {
           // Si no es JSON válido, usar el texto de la respuesta
-          const errorText = await response.text()
-          errorMessage = errorText || `Error ${response.status}: ${response.statusText}`
+          errorMessage = responseText || `Error ${response.status}: ${response.statusText}`
         }
         throw new Error(errorMessage)
       } else {
