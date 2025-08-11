@@ -1,14 +1,10 @@
-import express from 'express'
-import sqlite3 from 'sqlite3'
-import cors from 'cors'
-import path from 'path'
-import { fileURLToPath } from 'url'
-import fs from 'fs-extra'
-import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const express = require('express')
+const sqlite3 = require('sqlite3')
+const cors = require('cors')
+const path = require('path')
+const fs = require('fs-extra')
+const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
 
 const app = express()
 
@@ -463,4 +459,4 @@ app.get('/api/health', (req, res) => {
 })
 
 // Export for Vercel
-export default app
+module.exports = app

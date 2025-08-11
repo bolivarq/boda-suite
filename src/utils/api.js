@@ -1,5 +1,5 @@
 // Base URL del servidor backend
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
+const API_BASE_URL = import.meta.env.PROD 
   ? '/api' 
   : 'http://localhost:3002/api'
 
