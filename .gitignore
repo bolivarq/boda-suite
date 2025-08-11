@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Production build
+dist/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database (opcional - puedes incluir una DB de ejemplo)
+# server/boda_suite.db
+
+# Uploads y archivos generados
+uploads/
+recibos/
+
+# Scripts de prueba
+*.cjs
+test_*.js
+check_*.js
+create_*.js
+reset_*.js
+update_*.js
+
+# Directorios de versiones anteriores
+boda-suite/
+boda-suite-1/
+boda-suite-2/
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
