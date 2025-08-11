@@ -1,5 +1,7 @@
 // Base URL del servidor backend
-const API_BASE_URL = 'http://localhost:3002'
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? '/api' 
+  : 'http://localhost:3002/api'
 
 // Utilidad para hacer peticiones API con autenticación automática
 export const apiRequest = async (url, options = {}) => {
