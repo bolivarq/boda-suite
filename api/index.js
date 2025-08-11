@@ -37,6 +37,8 @@ try {
   const dbPath = '/tmp/boda_suite.db'
   db = new (sqlite3.verbose().Database)(dbPath)
   
+  console.log('Database initialized at:', dbPath)
+  
   // Initialize database tables
   db.serialize(() => {
     // Tabla de usuarios para autenticación
@@ -113,11 +115,15 @@ try {
     const adminEmail = 'admin@bodasuite.com'
     const adminPassword = 'admin123'
     
+    console.log('Creating admin user...')
+    
     bcrypt.hash(adminPassword, 10, (err, hash) => {
       if (err) {
         console.error('Error hashing password:', err)
         return
       }
+      
+      console.log('Password hashed successfully')
       
       db.run(
         'INSERT OR IGNORE INTO usuarios (email, password) VALUES (?, ?)',
@@ -127,6 +133,8 @@ try {
             console.error('Error creating admin user:', err.message)
           } else if (this.changes > 0) {
             console.log('Admin user created successfully')
+          } else {
+            console.log('Admin user already exists')
           }
         }
       )

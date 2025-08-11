@@ -1,7 +1,6 @@
 {
   "name": "boda-suite",
   "version": "1.0.0",
-  "type": "module",
   "description": "Aplicación para gestionar una boda y hotel",
   "main": "index.js",
   "scripts": {
