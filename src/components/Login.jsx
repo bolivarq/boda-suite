@@ -40,11 +40,23 @@ const Login = ({ onLogin }) => {
         
         // Llamar callback de login exitoso
         onLogin(data.token, data.user)
+      } else if (response) {
+        // Intentar parsear como JSON, si falla usar texto plano
+        let errorMessage = 'Error de autenticación'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch (jsonError) {
+          // Si no es JSON válido, usar el texto de la respuesta
+          const errorText = await response.text()
+          errorMessage = errorText || `Error ${response.status}: ${response.statusText}`
+        }
+        throw new Error(errorMessage)
       } else {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Error de autenticación')
+        throw new Error('No se pudo conectar con el servidor')
       }
     } catch (error) {
+      console.error('Error en login:', error)
       setError(error.message || 'Error de conexión. Intenta nuevamente.')
     } finally {
       setLoading(false)
