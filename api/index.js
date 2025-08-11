@@ -277,6 +277,17 @@ app.post('/api/auth/register', (req, res) => {
   })
 })
 
+// Token verification route
+app.get('/api/verify-token', authenticateToken, (req, res) => {
+  res.json({
+    valid: true,
+    user: {
+      id: req.user.id,
+      email: req.user.email
+    }
+  })
+})
+
 // Dashboard Routes
 app.get('/api/dashboard/stats', authenticateToken, (req, res) => {
   const queries = [

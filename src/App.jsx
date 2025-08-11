@@ -7,6 +7,7 @@ import Pagos from './components/Pagos'
 import Configuracion from './components/Configuracion'
 import Auditoria from './components/Auditoria'
 import Login from './components/Login'
+import { apiRequest } from './utils/api'
 
 function Navigation({ user, onLogout }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -120,31 +121,36 @@ function App() {
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token')
-      const savedUser = localStorage.getItem('user')
-
-      if (token && savedUser) {
+      const userData = localStorage.getItem('user')
+      
+      if (token && userData) {
         try {
-          // Verificar si el token es válido
-          const response = await fetch('http://localhost:3002/api/verify-token', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          })
-
-          if (response.ok) {
+          // Verificar el token con el servidor
+          const response = await apiRequest('/verify-token')
+          
+          if (response && response.ok) {
+            const data = await response.json()
+            setUser(JSON.parse(userData))
             setIsAuthenticated(true)
-            setUser(JSON.parse(savedUser))
           } else {
-            // Token inválido, limpiar localStorage
+            // Token inválido, limpiar datos
             localStorage.removeItem('token')
             localStorage.removeItem('user')
+            setIsAuthenticated(false)
+            setUser(null)
           }
         } catch (error) {
           console.error('Error verificando token:', error)
+          // En caso de error, limpiar datos
           localStorage.removeItem('token')
           localStorage.removeItem('user')
+          setIsAuthenticated(false)
+          setUser(null)
         }
+      } else {
+        setIsAuthenticated(false)
       }
+      
       setLoading(false)
     }
 

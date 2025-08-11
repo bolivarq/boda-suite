@@ -41,21 +41,20 @@ function Configuracion() {
     const file = e.target.files[0]
     if (!file) return
 
-    setUploadingImage(true)
-    
     const formData = new FormData()
     formData.append('imagen', file)
 
     try {
-      const data = await apiUpload('/api/upload-portada', formData)
-      setConfiguracion({ 
-        ...configuracion, 
-        imagen_portada: data.filePath 
-      })
+      setUploadingImage(true)
+      const data = await apiUpload('/upload-portada', formData)
+      setConfiguracion(prev => ({
+        ...prev,
+        imagen_portada: data.imagePath
+      }))
       alert('Imagen subida exitosamente')
     } catch (error) {
       console.error('Error uploading image:', error)
-      alert('Error al subir la imagen')
+      alert('Error subiendo imagen')
     } finally {
       setUploadingImage(false)
     }
@@ -63,7 +62,7 @@ function Configuracion() {
 
   const fetchConfiguracion = async () => {
     try {
-      const data = await apiGet('/api/configuracion')
+      const data = await apiGet('/configuracion')
       if (data) {
         setConfiguracion(data)
       }
@@ -74,10 +73,8 @@ function Configuracion() {
 
   const fetchHotel = async () => {
     try {
-      const data = await apiGet('/api/hotel')
-      if (data) {
-        setHotel(data)
-      }
+      const data = await apiGet('/hotel')
+      setHotel(data)
     } catch (error) {
       console.error('Error fetching hotel:', error)
     }
@@ -85,7 +82,7 @@ function Configuracion() {
 
   const fetchHabitaciones = async () => {
     try {
-      const data = await apiGet('/api/habitaciones')
+      const data = await apiGet('/habitaciones')
       setHabitaciones(data)
     } catch (error) {
       console.error('Error fetching habitaciones:', error)
@@ -95,43 +92,35 @@ function Configuracion() {
   const handleConfiguracionSubmit = async (e) => {
     e.preventDefault()
     try {
-      await apiPost('/api/configuracion', configuracion)
+      await apiPost('/configuracion', configuracion)
       alert('Configuración guardada exitosamente')
     } catch (error) {
       console.error('Error saving configuracion:', error)
+      alert('Error guardando configuración')
     }
   }
 
   const handleHotelSubmit = async (e) => {
     e.preventDefault()
     try {
-      await apiPost('/api/hotel', hotel)
+      await apiPost('/hotel', hotel)
       alert('Información del hotel guardada exitosamente')
     } catch (error) {
       console.error('Error saving hotel:', error)
+      alert('Error guardando información del hotel')
     }
   }
 
   const handleHabitacionSubmit = async (e) => {
     e.preventDefault()
     try {
-      if (selectedHabitacion) {
-        await apiPut(`/api/habitaciones/${selectedHabitacion.id}`, habitacionForm)
-      } else {
-        await apiPost('/api/habitaciones', habitacionForm)
-      }
-
+      await apiPost('/habitaciones', habitacionForm)
+      setHabitacionForm({ nombre: '', precio: '', capacidad: '', cupos_disponibles: '' })
       fetchHabitaciones()
-      setShowHabitacionModal(false)
-      setSelectedHabitacion(null)
-      setHabitacionForm({
-        nombre: '',
-        precio: '',
-        capacidad: '',
-        cupos_disponibles: ''
-      })
+      alert('Habitación agregada exitosamente')
     } catch (error) {
-      console.error('Error saving habitacion:', error)
+      console.error('Error adding habitacion:', error)
+      alert('Error agregando habitación')
     }
   }
 

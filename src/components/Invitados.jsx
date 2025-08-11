@@ -26,7 +26,7 @@ function Invitados() {
 
   const fetchInvitados = async () => {
     try {
-      const data = await apiGet('/api/invitados')
+      const data = await apiGet('/invitados')
       setInvitados(data)
     } catch (error) {
       console.error('Error fetching invitados:', error)
@@ -35,7 +35,7 @@ function Invitados() {
 
   const fetchHabitaciones = async () => {
     try {
-      const data = await apiGet('/api/habitaciones')
+      const data = await apiGet('/habitaciones')
       setHabitaciones(data)
     } catch (error) {
       console.error('Error fetching habitaciones:', error)
@@ -48,7 +48,7 @@ function Invitados() {
       if (selectedInvitado) {
         await apiPut(`/api/invitados/${selectedInvitado.id}`, formData)
       } else {
-        await apiPost('/api/invitados', formData)
+        await apiPost('/invitados', formData)
       }
 
       fetchInvitados()

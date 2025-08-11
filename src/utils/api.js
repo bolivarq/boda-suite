@@ -1,6 +1,6 @@
 // Base URL del servidor backend
-const API_BASE_URL = import.meta.env.PROD 
-  ? '/api' 
+export const API_BASE_URL = import.meta.env.PROD 
+  ? 'https://boda-suite-app.vercel.app/api' 
   : 'http://localhost:3002/api'
 
 // Utilidad para hacer peticiones API con autenticación automática

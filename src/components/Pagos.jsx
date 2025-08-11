@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Plus, Search, DollarSign, X, Download } from 'lucide-react'
-import { apiGet, apiPost } from '../utils/api'
+import { apiGet, apiPost, API_BASE_URL } from '../utils/api'
 
 function Pagos() {
   const [pagos, setPagos] = useState([])
@@ -28,7 +28,7 @@ function Pagos() {
 
   const fetchPagos = async () => {
     try {
-      const data = await apiGet('/api/pagos')
+      const data = await apiGet('/pagos')
       setPagos(data)
     } catch (error) {
       console.error('Error fetching pagos:', error)
@@ -37,7 +37,7 @@ function Pagos() {
 
   const fetchInvitados = async () => {
     try {
-      const data = await apiGet('/api/invitados')
+      const data = await apiGet('/invitados')
       setInvitados(data)
     } catch (error) {
       console.error('Error fetching invitados:', error)
@@ -57,14 +57,14 @@ function Pagos() {
       if (response.ok) {
         // Si el recibo existe, descargarlo
         const link = document.createElement('a')
-        link.href = `/api/recibos/${fileName}`
+        link.href = `${API_BASE_URL}/recibos/${fileName}`
         link.download = fileName
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
       } else {
         // Si no existe, regenerar el recibo
-        const regenerateResponse = await fetch('/api/pagos/regenerar-recibo', {
+        const regenerateResponse = await fetch(`${API_BASE_URL}/pagos/regenerar-recibo`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -77,7 +77,7 @@ function Pagos() {
           
           // Descargar el recibo regenerado
           const link = document.createElement('a')
-          link.href = `/api/recibos/${result.recibo.fileName}`
+          link.href = `${API_BASE_URL}/recibos/${result.recibo.fileName}`
           link.download = result.recibo.fileName
           document.body.appendChild(link)
           link.click()
@@ -96,7 +96,7 @@ function Pagos() {
     e.preventDefault()
     
     try {
-      const result = await apiPost('/api/pagos', formData)
+      const result = await apiPost('/pagos', formData)
       
       setShowModal(false)
       setFormData({
@@ -116,7 +116,7 @@ function Pagos() {
         if (shouldDownload) {
           // Descargar el recibo
           const link = document.createElement('a')
-          link.href = `/api/recibos/${result.recibo.fileName}`
+          link.href = `${API_BASE_URL}/recibos/${result.recibo.fileName}`
           link.download = result.recibo.fileName
           document.body.appendChild(link)
           link.click()

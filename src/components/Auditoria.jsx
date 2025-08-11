@@ -21,7 +21,7 @@ function Auditoria() {
   const fetchAuditData = async () => {
     try {
       setLoading(true)
-      const data = await apiGet('/api/auditoria')
+      const data = await apiGet('/auditoria')
       setAuditData(data || [])
     } catch (error) {
       console.error('Error fetching audit data:', error)

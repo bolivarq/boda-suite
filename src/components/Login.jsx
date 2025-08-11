@@ -26,14 +26,24 @@ const Login = ({ onLogin }) => {
 
     try {
       const endpoint = isLogin ? '/auth/login' : '/auth/register'
-      const data = await apiRequest(endpoint, 'POST', formData)
+      const response = await apiRequest(endpoint, {
+        method: 'POST',
+        body: JSON.stringify(formData)
+      })
 
-      // Guardar token en localStorage
-      localStorage.setItem('token', data.token)
-      localStorage.setItem('user', JSON.stringify(data.user))
-      
-      // Llamar callback de login exitoso
-      onLogin(data.token, data.user)
+      if (response && response.ok) {
+        const data = await response.json()
+        
+        // Guardar token en localStorage
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+        
+        // Llamar callback de login exitoso
+        onLogin(data.token, data.user)
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Error de autenticación')
+      }
     } catch (error) {
       setError(error.message || 'Error de conexión. Intenta nuevamente.')
     } finally {

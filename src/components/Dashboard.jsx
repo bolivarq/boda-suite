@@ -23,7 +23,7 @@ function Dashboard() {
 
   const fetchStats = async () => {
     try {
-      const data = await apiGet('/api/dashboard/stats')
+      const data = await apiGet('/dashboard/stats')
       if (data) {
         setStats(data)
       }
@@ -34,7 +34,7 @@ function Dashboard() {
 
   const fetchConfiguracion = async () => {
     try {
-      const data = await apiGet('/api/configuracion')
+      const data = await apiGet('/configuracion')
       if (data && Object.keys(data).length > 0) {
         setConfiguracion(data)
       }
