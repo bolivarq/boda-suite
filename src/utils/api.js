@@ -1,7 +1,7 @@
 // Base URL del servidor backend
 export const API_BASE_URL = import.meta.env.PROD 
   ? '/api' 
-  : 'http://localhost:3002/api'
+  : 'http://localhost:3001/api'
 
 // Utilidad para hacer peticiones API con autenticación automática
 export const apiRequest = async (url, options = {}) => {
