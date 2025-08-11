@@ -218,6 +218,65 @@ app.post('/api/auth/login', (req, res) => {
   })
 })
 
+app.post('/api/auth/register', (req, res) => {
+  const { email, password } = req.body
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email y contraseña son requeridos' })
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' })
+  }
+
+  // Verificar si el usuario ya existe
+  db.get('SELECT * FROM usuarios WHERE email = ?', [email], (err, existingUser) => {
+    if (err) {
+      console.error('Database error:', err.message)
+      return res.status(500).json({ error: 'Error interno del servidor' })
+    }
+
+    if (existingUser) {
+      return res.status(400).json({ error: 'El usuario ya existe' })
+    }
+
+    // Hash de la contraseña
+    bcrypt.hash(password, 10, (err, hashedPassword) => {
+      if (err) {
+        console.error('Password hashing error:', err)
+        return res.status(500).json({ error: 'Error interno del servidor' })
+      }
+
+      // Crear nuevo usuario
+      db.run(
+        'INSERT INTO usuarios (email, password) VALUES (?, ?)',
+        [email, hashedPassword],
+        function(err) {
+          if (err) {
+            console.error('Error creating user:', err.message)
+            return res.status(500).json({ error: 'Error creando usuario' })
+          }
+
+          const token = jwt.sign(
+            { id: this.lastID, email: email },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+          )
+
+          res.json({
+            message: 'Usuario registrado exitosamente',
+            token,
+            user: {
+              id: this.lastID,
+              email: email
+            }
+          })
+        }
+      )
+    })
+  })
+})
+
 // Dashboard Routes
 app.get('/api/dashboard/stats', authenticateToken, (req, res) => {
   const queries = [

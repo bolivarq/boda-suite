@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { LogIn, UserPlus, Mail, Lock } from 'lucide-react'
+import { apiRequest } from '../utils/api'
 
 const Login = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true)
@@ -24,29 +25,17 @@ const Login = ({ onLogin }) => {
     setError('')
 
     try {
-      const endpoint = isLogin ? 'http://localhost:3002/api/login' : 'http://localhost:3002/api/register'
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      })
+      const endpoint = isLogin ? '/auth/login' : '/auth/register'
+      const data = await apiRequest(endpoint, 'POST', formData)
 
-      const data = await response.json()
-
-      if (response.ok) {
-        // Guardar token en localStorage
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        
-        // Llamar callback de login exitoso
-        onLogin(data.token, data.user)
-      } else {
-        setError(data.error || 'Error en la autenticación')
-      }
+      // Guardar token en localStorage
+      localStorage.setItem('token', data.token)
+      localStorage.setItem('user', JSON.stringify(data.user))
+      
+      // Llamar callback de login exitoso
+      onLogin(data.token, data.user)
     } catch (error) {
-      setError('Error de conexión. Intenta nuevamente.')
+      setError(error.message || 'Error de conexión. Intenta nuevamente.')
     } finally {
       setLoading(false)
     }
