@@ -11,6 +11,12 @@ const app = express()
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || 'boda-suite-secret-key-2024'
 
+// Logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`)
+  next()
+})
+
 // Middleware
 app.use(cors({
   origin: true,
@@ -18,6 +24,12 @@ app.use(cors({
 }))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ limit: '10mb', extended: true }))
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err)
+  res.status(500).json({ error: 'Error interno del servidor' })
+})
 
 // Database setup - En Vercel usaremos una base de datos temporal
 let db
@@ -174,9 +186,12 @@ const authenticateToken = (req, res, next) => {
 
 // Auth Routes
 app.post('/api/auth/login', (req, res) => {
+  console.log('Login attempt:', { email: req.body.email, hasPassword: !!req.body.password })
+  
   const { email, password } = req.body
 
   if (!email || !password) {
+    console.log('Missing credentials')
     return res.status(400).json({ error: 'Email y contraseña son requeridos' })
   }
 
@@ -187,9 +202,11 @@ app.post('/api/auth/login', (req, res) => {
     }
 
     if (!user) {
+      console.log('User not found:', email)
       return res.status(401).json({ error: 'Credenciales inválidas' })
     }
 
+    console.log('User found, comparing passwords')
     bcrypt.compare(password, user.password, (err, isMatch) => {
       if (err) {
         console.error('Password comparison error:', err)
@@ -197,9 +214,11 @@ app.post('/api/auth/login', (req, res) => {
       }
 
       if (!isMatch) {
+        console.log('Password mismatch for user:', email)
         return res.status(401).json({ error: 'Credenciales inválidas' })
       }
 
+      console.log('Login successful for user:', email)
       const token = jwt.sign(
         { id: user.id, email: user.email },
         JWT_SECRET,
