@@ -25,7 +25,7 @@ const Login = ({ onLogin }) => {
     setError('')
 
     try {
-      const endpoint = isLogin ? '/login' : '/register'
+      const endpoint = isLogin ? '/auth/login' : '/auth/register'
       console.log('Attempting to connect to:', endpoint)
       
       const response = await apiRequest(endpoint, {
