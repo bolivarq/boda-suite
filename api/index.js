@@ -746,9 +746,8 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Boda Suite API is running' })
 })
 
-// Export for Vercel
+// Export for Vercel as serverless function
 module.exports = app
-module.exports.default = app
 
 // For local development
 if (require.main === module) {
