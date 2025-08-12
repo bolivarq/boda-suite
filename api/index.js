@@ -448,6 +448,33 @@ app.post('/api/habitaciones', authenticateToken, (req, res) => {
   )
 })
 
+app.put('/api/habitaciones/:id', authenticateToken, (req, res) => {
+  const { id } = req.params
+  const { nombre, precio, capacidad, cupos_disponibles } = req.body
+
+  if (!nombre || !precio || !capacidad || cupos_disponibles === undefined) {
+    return res.status(400).json({ error: 'Todos los campos son requeridos' })
+  }
+
+  db.run(
+    'UPDATE habitaciones SET nombre = ?, precio = ?, capacidad = ?, cupos_disponibles = ? WHERE id = ?',
+    [nombre, precio, capacidad, cupos_disponibles, id],
+    function(err) {
+      if (err) {
+        console.error('Error updating room:', err.message)
+        return res.status(500).json({ error: 'Error actualizando habitación' })
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Habitación no encontrada' })
+      }
+
+      registrarAuditoria('habitaciones', 'UPDATE', `Habitación actualizada: ${nombre}`, req.user.id, req.user.email)
+      res.json({ message: 'Habitación actualizada exitosamente' })
+    }
+  )
+})
+
 app.delete('/api/habitaciones/:id', authenticateToken, (req, res) => {
   const { id } = req.params
 

@@ -74,7 +74,26 @@ function Configuracion() {
   const fetchHotel = async () => {
     try {
       const data = await apiGet('/hotel')
-      setHotel(data)
+      if (data) {
+        // Asegurar que servicios_incluidos sea un array
+        const servicios = data.servicios_incluidos
+        let serviciosArray = []
+        
+        if (typeof servicios === 'string') {
+          try {
+            serviciosArray = JSON.parse(servicios)
+          } catch {
+            serviciosArray = servicios ? servicios.split(',').map(s => s.trim()).filter(s => s) : []
+          }
+        } else if (Array.isArray(servicios)) {
+          serviciosArray = servicios
+        }
+        
+        setHotel({
+          ...data,
+          servicios_incluidos: serviciosArray
+        })
+      }
     } catch (error) {
       console.error('Error fetching hotel:', error)
     }
@@ -103,7 +122,12 @@ function Configuracion() {
   const handleHotelSubmit = async (e) => {
     e.preventDefault()
     try {
-      await apiPost('/hotel', hotel)
+      // Convertir servicios_incluidos a JSON string para enviar al backend
+      const hotelData = {
+        ...hotel,
+        servicios_incluidos: JSON.stringify(hotel.servicios_incluidos)
+      }
+      await apiPost('/hotel', hotelData)
       alert('Información del hotel guardada exitosamente')
     } catch (error) {
       console.error('Error saving hotel:', error)
@@ -134,10 +158,12 @@ function Configuracion() {
   const handleDeleteHabitacion = async (id) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar esta habitación?')) {
       try {
-        await apiDelete(`/api/habitaciones/${id}`)
+        await apiDelete(`/habitaciones/${id}`)
         fetchHabitaciones()
+        alert('Habitación eliminada exitosamente')
       } catch (error) {
         console.error('Error deleting habitacion:', error)
+        alert('Error eliminando habitación')
       }
     }
   }
@@ -157,7 +183,7 @@ function Configuracion() {
     if (nuevoServicio.trim()) {
       setHotel({
         ...hotel,
-        servicios_incluidos: [...hotel.servicios_incluidos, nuevoServicio.trim()]
+        servicios_incluidos: [...(hotel.servicios_incluidos || []), nuevoServicio.trim()]
       })
       setNuevoServicio('')
     }
@@ -166,7 +192,7 @@ function Configuracion() {
   const eliminarServicio = (index) => {
     setHotel({
       ...hotel,
-      servicios_incluidos: hotel.servicios_incluidos.filter((_, i) => i !== index)
+      servicios_incluidos: (hotel.servicios_incluidos || []).filter((_, i) => i !== index)
     })
   }
 
@@ -312,9 +338,9 @@ function Configuracion() {
                 </button>
               </div>
               
-              {hotel.servicios_incluidos.length > 0 && (
+              {(hotel.servicios_incluidos || []).length > 0 && (
                 <div className="space-y-1">
-                  {hotel.servicios_incluidos.map((servicio, index) => (
+                  {(hotel.servicios_incluidos || []).map((servicio, index) => (
                     <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
                       <span>{servicio}</span>
                       <button
