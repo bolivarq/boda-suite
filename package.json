@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Aplicación para gestionar una boda y hotel",
   "main": "index.js",
-  "type": "module",
+
   "scripts": {
     "dev": "vite",
     "build": "vite build",
