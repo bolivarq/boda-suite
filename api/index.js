@@ -748,6 +748,7 @@ app.get('/api/health', (req, res) => {
 
 // Export for Vercel
 module.exports = app
+module.exports.default = app
 
 // For local development
 if (require.main === module) {
