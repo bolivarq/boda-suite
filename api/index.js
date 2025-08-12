@@ -32,121 +32,145 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Error interno del servidor' })
 })
 
-// Database setup - En Vercel usaremos una base de datos temporal
+// Database setup - En Vercel usaremos una base de datos en memoria
 let db
-try {
-  const dbPath = '/tmp/boda_suite.db'
-  db = new (sqlite3.verbose().Database)(dbPath)
-  
-  console.log('Database initialized at:', dbPath)
-  
-  // Initialize database tables
-  db.serialize(() => {
-    // Tabla de usuarios para autenticación
-    db.run(`CREATE TABLE IF NOT EXISTS usuarios (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`)
+let isInitialized = false
 
-    // Configuración Boda
-    db.run(`CREATE TABLE IF NOT EXISTS configuracion_boda (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nombre_novia TEXT NOT NULL,
-      nombre_novio TEXT NOT NULL,
-      fecha_boda DATE NOT NULL,
-      hora_boda TIME NOT NULL,
-      lugar_boda TEXT NOT NULL,
-      imagen_portada TEXT
-    )`)
-
-    // Hotel
-    db.run(`CREATE TABLE IF NOT EXISTS hotel (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nombre TEXT NOT NULL,
-      direccion TEXT NOT NULL,
-      servicios_incluidos TEXT
-    )`)
-
-    // Habitaciones
-    db.run(`CREATE TABLE IF NOT EXISTS habitaciones (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      hotel_id INTEGER DEFAULT 1,
-      nombre TEXT NOT NULL,
-      precio DECIMAL(10,2) NOT NULL,
-      capacidad INTEGER NOT NULL,
-      cupos_disponibles INTEGER NOT NULL,
-      FOREIGN KEY (hotel_id) REFERENCES hotel (id)
-    )`)
-
-    // Invitados
-    db.run(`CREATE TABLE IF NOT EXISTS invitados (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nombre TEXT NOT NULL,
-      contacto TEXT NOT NULL,
-      habitacion_id INTEGER,
-      estado_pago TEXT DEFAULT 'Pendiente',
-      FOREIGN KEY (habitacion_id) REFERENCES habitaciones (id)
-    )`)
-
-    // Pagos
-    db.run(`CREATE TABLE IF NOT EXISTS pagos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      invitado_id INTEGER NOT NULL,
-      monto DECIMAL(10,2) NOT NULL,
-      metodo_pago TEXT NOT NULL,
-      fecha_pago DATE NOT NULL,
-      saldo_pendiente DECIMAL(10,2) DEFAULT 0,
-      FOREIGN KEY (invitado_id) REFERENCES invitados (id)
-    )`)
-
-    // Auditoría
-    db.run(`CREATE TABLE IF NOT EXISTS auditoria (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      tabla TEXT NOT NULL,
-      accion TEXT NOT NULL,
-      descripcion TEXT,
-      usuario_id INTEGER,
-      usuario_email TEXT,
-      fecha DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`)
-
-    // Insertar usuarios por defecto
-    const users = [
-      { email: 'admin@bodasuite.com', password: 'admin123' },
-      { email: 'bolivarq@gmail.com', password: 'bq191066' }
-    ]
+const initializeDatabase = () => {
+  return new Promise((resolve, reject) => {
+    if (isInitialized) {
+      resolve(db)
+      return
+    }
     
-    console.log('Creating default users...')
-    
-    users.forEach(userData => {
-      bcrypt.hash(userData.password, 10, (err, hash) => {
-        if (err) {
-          console.error('Error hashing password for', userData.email, ':', err)
-          return
-        }
+    try {
+      // Usar base de datos en memoria para Vercel
+      db = new (sqlite3.verbose().Database)(':memory:')
+      
+      console.log('Database initialized in memory for Vercel')
+  
+      // Initialize database tables
+      db.serialize(() => {
+        // Tabla de usuarios para autenticación
+        db.run(`CREATE TABLE usuarios (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          email TEXT UNIQUE NOT NULL,
+          password TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`)
+
+        // Configuración Boda
+        db.run(`CREATE TABLE configuracion_boda (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          nombre_novia TEXT NOT NULL,
+          nombre_novio TEXT NOT NULL,
+          fecha_boda DATE NOT NULL,
+          hora_boda TIME NOT NULL,
+          lugar_boda TEXT NOT NULL,
+          imagen_portada TEXT
+        )`)
+
+        // Hotel
+        db.run(`CREATE TABLE hotel (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          nombre TEXT NOT NULL,
+          direccion TEXT NOT NULL,
+          servicios_incluidos TEXT
+        )`)
+
+        // Habitaciones
+        db.run(`CREATE TABLE habitaciones (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          hotel_id INTEGER DEFAULT 1,
+          nombre TEXT NOT NULL,
+          precio DECIMAL(10,2) NOT NULL,
+          capacidad INTEGER NOT NULL,
+          cupos_disponibles INTEGER NOT NULL,
+          FOREIGN KEY (hotel_id) REFERENCES hotel (id)
+        )`)
+
+        // Invitados
+        db.run(`CREATE TABLE invitados (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          nombre TEXT NOT NULL,
+          contacto TEXT NOT NULL,
+          habitacion_id INTEGER,
+          estado_pago TEXT DEFAULT 'Pendiente',
+          FOREIGN KEY (habitacion_id) REFERENCES habitaciones (id)
+        )`)
+
+        // Pagos
+        db.run(`CREATE TABLE pagos (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          invitado_id INTEGER NOT NULL,
+          monto DECIMAL(10,2) NOT NULL,
+          metodo_pago TEXT NOT NULL,
+          fecha_pago DATE NOT NULL,
+          saldo_pendiente DECIMAL(10,2) DEFAULT 0,
+          FOREIGN KEY (invitado_id) REFERENCES invitados (id)
+        )`)
+
+        // Auditoría
+        db.run(`CREATE TABLE auditoria (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          tabla TEXT NOT NULL,
+          accion TEXT NOT NULL,
+          descripcion TEXT,
+          usuario_id INTEGER,
+          usuario_email TEXT,
+          fecha DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`)
+
+        // Insertar usuarios por defecto
+        const users = [
+          { email: 'admin@bodasuite.com', password: 'admin123' },
+          { email: 'bolivarq@gmail.com', password: 'bq191066' }
+        ]
         
-        console.log('Password hashed successfully for', userData.email)
+        console.log('Creating default users...')
         
-        db.run(
-          'INSERT OR IGNORE INTO usuarios (email, password) VALUES (?, ?)',
-          [userData.email, hash],
-          function(err) {
+        let usersCreated = 0
+        const totalUsers = users.length
+        
+        users.forEach(userData => {
+          bcrypt.hash(userData.password, 10, (err, hash) => {
             if (err) {
-              console.error('Error creating user', userData.email, ':', err.message)
-            } else if (this.changes > 0) {
-              console.log('User created successfully:', userData.email)
-            } else {
-              console.log('User already exists:', userData.email)
+              console.error('Error hashing password for', userData.email, ':', err)
+              usersCreated++
+              if (usersCreated === totalUsers) {
+                isInitialized = true
+                resolve(db)
+              }
+              return
             }
-          }
-        )
+            
+            console.log('Password hashed successfully for', userData.email)
+            
+            db.run(
+              'INSERT INTO usuarios (email, password) VALUES (?, ?)',
+              [userData.email, hash],
+              function(err) {
+                if (err) {
+                  console.error('Error creating user', userData.email, ':', err.message)
+                } else {
+                  console.log('User created successfully:', userData.email)
+                }
+                
+                usersCreated++
+                if (usersCreated === totalUsers) {
+                  isInitialized = true
+                  resolve(db)
+                }
+              }
+            )
+          })
+        })
       })
-    })
+    } catch (error) {
+      console.error('Database initialization error:', error)
+      reject(error)
+    }
   })
-} catch (error) {
-  console.error('Database initialization error:', error)
 }
 
 // Helper functions
@@ -177,6 +201,17 @@ const registrarAuditoria = (tabla, accion, descripcion, usuarioId, usuarioEmail)
   )
 }
 
+// Middleware para inicializar base de datos
+const initializeDB = async (req, res, next) => {
+  try {
+    await initializeDatabase()
+    next()
+  } catch (error) {
+    console.error('Database initialization failed:', error)
+    res.status(500).json({ error: 'Error interno del servidor' })
+  }
+}
+
 // Middleware de autenticación
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization']
@@ -194,6 +229,9 @@ const authenticateToken = (req, res, next) => {
     next()
   })
 }
+
+// Aplicar middleware de inicialización a todas las rutas de API
+app.use('/api', initializeDB)
 
 // API Routes
 
