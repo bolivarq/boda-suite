@@ -114,13 +114,20 @@ function Configuracion() {
   const handleHabitacionSubmit = async (e) => {
     e.preventDefault()
     try {
-      await apiPost('/habitaciones', habitacionForm)
+      if (selectedHabitacion) {
+        await apiPut(`/habitaciones/${selectedHabitacion.id}`, habitacionForm)
+      } else {
+        await apiPost('/habitaciones', habitacionForm)
+      }
+      
       setHabitacionForm({ nombre: '', precio: '', capacidad: '', cupos_disponibles: '' })
+      setShowHabitacionModal(false)
+      setSelectedHabitacion(null)
       fetchHabitaciones()
-      alert('Habitación agregada exitosamente')
+      alert('Habitación guardada exitosamente')
     } catch (error) {
-      console.error('Error adding habitacion:', error)
-      alert('Error agregando habitación')
+      console.error('Error saving habitacion:', error)
+      alert('Error guardando habitación')
     }
   }
 

@@ -1,3 +1,4 @@
+// Boda Suite API - Updated with correct credentials
 const express = require('express')
 const sqlite3 = require('sqlite3')
 const cors = require('cors')
@@ -111,33 +112,37 @@ try {
       fecha DATETIME DEFAULT CURRENT_TIMESTAMP
     )`)
 
-    // Insertar usuario admin por defecto
-    const adminEmail = 'admin@bodasuite.com'
-    const adminPassword = 'admin123'
+    // Insertar usuarios por defecto
+    const users = [
+      { email: 'admin@bodasuite.com', password: 'admin123' },
+      { email: 'bolivarq@gmail.com', password: 'bq191066' }
+    ]
     
-    console.log('Creating admin user...')
+    console.log('Creating default users...')
     
-    bcrypt.hash(adminPassword, 10, (err, hash) => {
-      if (err) {
-        console.error('Error hashing password:', err)
-        return
-      }
-      
-      console.log('Password hashed successfully')
-      
-      db.run(
-        'INSERT OR IGNORE INTO usuarios (email, password) VALUES (?, ?)',
-        [adminEmail, hash],
-        function(err) {
-          if (err) {
-            console.error('Error creating admin user:', err.message)
-          } else if (this.changes > 0) {
-            console.log('Admin user created successfully')
-          } else {
-            console.log('Admin user already exists')
-          }
+    users.forEach(userData => {
+      bcrypt.hash(userData.password, 10, (err, hash) => {
+        if (err) {
+          console.error('Error hashing password for', userData.email, ':', err)
+          return
         }
-      )
+        
+        console.log('Password hashed successfully for', userData.email)
+        
+        db.run(
+          'INSERT OR IGNORE INTO usuarios (email, password) VALUES (?, ?)',
+          [userData.email, hash],
+          function(err) {
+            if (err) {
+              console.error('Error creating user', userData.email, ':', err.message)
+            } else if (this.changes > 0) {
+              console.log('User created successfully:', userData.email)
+            } else {
+              console.log('User already exists:', userData.email)
+            }
+          }
+        )
+      })
     })
   })
 } catch (error) {
@@ -443,6 +448,45 @@ app.post('/api/habitaciones', authenticateToken, (req, res) => {
   )
 })
 
+app.delete('/api/habitaciones/:id', authenticateToken, (req, res) => {
+  const { id } = req.params
+
+  // Primero obtener el nombre de la habitación para la auditoría
+  db.get('SELECT nombre FROM habitaciones WHERE id = ?', [id], (err, habitacion) => {
+    if (err) {
+      console.error('Error getting room for deletion:', err.message)
+      return res.status(500).json({ error: 'Error obteniendo habitación' })
+    }
+
+    if (!habitacion) {
+      return res.status(404).json({ error: 'Habitación no encontrada' })
+    }
+
+    // Verificar si hay invitados asignados a esta habitación
+    db.get('SELECT COUNT(*) as count FROM invitados WHERE habitacion_id = ?', [id], (err, result) => {
+      if (err) {
+        console.error('Error checking room guests:', err.message)
+        return res.status(500).json({ error: 'Error verificando invitados' })
+      }
+
+      if (result.count > 0) {
+        return res.status(400).json({ error: 'No se puede eliminar la habitación porque tiene invitados asignados' })
+      }
+
+      // Eliminar la habitación
+      db.run('DELETE FROM habitaciones WHERE id = ?', [id], function(err) {
+        if (err) {
+          console.error('Error deleting room:', err.message)
+          return res.status(500).json({ error: 'Error eliminando habitación' })
+        }
+
+        registrarAuditoria('habitaciones', 'DELETE', `Habitación eliminada: ${habitacion.nombre}`, req.user.id, req.user.email)
+        res.json({ message: 'Habitación eliminada exitosamente' })
+      })
+    })
+  })
+})
+
 // Invitados Routes
 app.get('/api/invitados', authenticateToken, (req, res) => {
   const query = `
@@ -497,6 +541,88 @@ app.post('/api/invitados', authenticateToken, (req, res) => {
       res.json({ message: 'Invitado creado exitosamente', id: this.lastID })
     }
   )
+})
+
+app.put('/api/invitados/:id', authenticateToken, (req, res) => {
+  const { id } = req.params
+  const { nombre, contacto, habitacion_id } = req.body
+
+  if (!nombre || !contacto) {
+    return res.status(400).json({ error: 'Nombre y contacto son requeridos' })
+  }
+
+  db.run(
+    'UPDATE invitados SET nombre = ?, contacto = ?, habitacion_id = ? WHERE id = ?',
+    [nombre, contacto, habitacion_id || null, id],
+    function(err) {
+      if (err) {
+        console.error('Error updating guest:', err.message)
+        return res.status(500).json({ error: 'Error actualizando invitado' })
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Invitado no encontrado' })
+      }
+
+      registrarAuditoria('invitados', 'UPDATE', `Invitado actualizado: ${nombre}`, req.user.id, req.user.email)
+      res.json({ message: 'Invitado actualizado exitosamente' })
+    }
+  )
+})
+
+app.delete('/api/invitados/:id', authenticateToken, (req, res) => {
+  const { id } = req.params
+
+  // Primero obtener el nombre del invitado para la auditoría
+  db.get('SELECT nombre FROM invitados WHERE id = ?', [id], (err, invitado) => {
+    if (err) {
+      console.error('Error getting guest for deletion:', err.message)
+      return res.status(500).json({ error: 'Error obteniendo invitado' })
+    }
+
+    if (!invitado) {
+      return res.status(404).json({ error: 'Invitado no encontrado' })
+    }
+
+    // Eliminar pagos asociados primero
+    db.run('DELETE FROM pagos WHERE invitado_id = ?', [id], (err) => {
+      if (err) {
+        console.error('Error deleting guest payments:', err.message)
+        return res.status(500).json({ error: 'Error eliminando pagos del invitado' })
+      }
+
+      // Luego eliminar el invitado
+      db.run('DELETE FROM invitados WHERE id = ?', [id], function(err) {
+        if (err) {
+          console.error('Error deleting guest:', err.message)
+          return res.status(500).json({ error: 'Error eliminando invitado' })
+        }
+
+        registrarAuditoria('invitados', 'DELETE', `Invitado eliminado: ${invitado.nombre}`, req.user.id, req.user.email)
+        res.json({ message: 'Invitado eliminado exitosamente' })
+      })
+    })
+  })
+})
+
+app.get('/api/invitados/:id/pagos', authenticateToken, (req, res) => {
+  const { id } = req.params
+
+  const query = `
+    SELECT p.*, i.nombre as invitado_nombre
+    FROM pagos p
+    JOIN invitados i ON p.invitado_id = i.id
+    WHERE p.invitado_id = ?
+    ORDER BY p.fecha_pago DESC
+  `
+
+  db.all(query, [id], (err, rows) => {
+    if (err) {
+      console.error('Error getting guest payments:', err.message)
+      return res.status(500).json({ error: 'Error obteniendo pagos del invitado' })
+    }
+    res.json(rows || [])
+  })
 })
 
 // Pagos Routes

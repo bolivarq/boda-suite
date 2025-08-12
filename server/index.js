@@ -147,7 +147,43 @@ db.serialize(() => {
     saldo_pendiente DECIMAL(10,2) DEFAULT 0,
     FOREIGN KEY (invitado_id) REFERENCES invitados (id)
   )`)
-})
+
+  // Auditoría
+  db.run(`CREATE TABLE IF NOT EXISTS auditoria (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tabla TEXT NOT NULL,
+    accion TEXT NOT NULL,
+    descripcion TEXT,
+    usuario_id INTEGER,
+    usuario_email TEXT,
+    fecha DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`)
+
+  // Insertar usuario admin por defecto
+  const adminEmail = 'admin@bodasuite.com'
+  const adminPassword = 'admin123'
+  
+  bcrypt.hash(adminPassword, 10, (err, hash) => {
+    if (err) {
+      console.error('Error hashing password:', err)
+      return
+    }
+    
+    db.run(
+      'INSERT OR IGNORE INTO usuarios (email, password) VALUES (?, ?)',
+      [adminEmail, hash],
+      function(err) {
+        if (err) {
+          console.error('Error creating admin user:', err.message)
+        } else if (this.changes > 0) {
+          console.log('Admin user created successfully')
+        } else {
+          console.log('Admin user already exists')
+        }
+      }
+    )
+   })
+ })
 
 // Helper function to calculate payment status and pending balance
 const calculatePaymentStatus = (habitacionPrecio, totalPagado) => {
@@ -1079,6 +1115,11 @@ app.get('/api/auditoria', authenticateToken, (req, res) => {
       res.json(auditRows || [])
     }
   })
+})
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() })
 })
 
 // Catch-all handler: send back React's index.html file in production

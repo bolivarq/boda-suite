@@ -25,11 +25,15 @@ const Login = ({ onLogin }) => {
     setError('')
 
     try {
-      const endpoint = isLogin ? '/auth/login' : '/auth/register'
+      const endpoint = isLogin ? '/login' : '/register'
+      console.log('Attempting to connect to:', endpoint)
+      
       const response = await apiRequest(endpoint, {
         method: 'POST',
         body: JSON.stringify(formData)
       })
+
+      console.log('Response received:', response)
 
       if (response && response.ok) {
         const data = await response.json()
@@ -59,7 +63,16 @@ const Login = ({ onLogin }) => {
       }
     } catch (error) {
       console.error('Error en login:', error)
-      setError(error.message || 'Error de conexión. Intenta nuevamente.')
+      
+      // Mejorar el manejo de errores de conexión
+      let errorMessage = error.message
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        errorMessage = 'Error de conexión: No se puede conectar con el servidor. Verifica que el servidor esté ejecutándose.'
+      } else if (error.message.includes('500')) {
+        errorMessage = 'Error 500: Error interno del servidor'
+      }
+      
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
