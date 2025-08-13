@@ -222,7 +222,7 @@ const authenticateToken = (req, res, next) => {
 // API Routes
 
 // Auth Routes
-app.post('/api/auth/login', (req, res) => {
+app.post('/auth/login', (req, res) => {
   console.log('Login attempt:', { email: req.body.email, hasPassword: !!req.body.password })
   
   const { email, password } = req.body
@@ -274,7 +274,7 @@ app.post('/api/auth/login', (req, res) => {
   })
 })
 
-app.post('/api/auth/register', (req, res) => {
+app.post('/auth/register', (req, res) => {
   const { email, password } = req.body
 
   if (!email || !password) {
@@ -334,7 +334,7 @@ app.post('/api/auth/register', (req, res) => {
 })
 
 // Token verification route
-app.get('/api/verify-token', authenticateToken, (req, res) => {
+app.get('/verify-token', authenticateToken, (req, res) => {
   res.json({
     valid: true,
     user: {
@@ -345,7 +345,7 @@ app.get('/api/verify-token', authenticateToken, (req, res) => {
 })
 
 // Dashboard Routes
-app.get('/api/dashboard/stats', authenticateToken, (req, res) => {
+app.get('/dashboard/stats', authenticateToken, (req, res) => {
   const queries = [
     'SELECT COUNT(*) as total FROM invitados',
     'SELECT COUNT(*) as confirmados FROM invitados WHERE habitacion_id IS NOT NULL',
@@ -374,7 +374,7 @@ app.get('/api/dashboard/stats', authenticateToken, (req, res) => {
 })
 
 // Configuración Routes
-app.get('/api/configuracion', authenticateToken, (req, res) => {
+app.get('/configuracion', authenticateToken, (req, res) => {
   db.get('SELECT * FROM configuracion_boda ORDER BY id DESC LIMIT 1', (err, row) => {
     if (err) {
       console.error('Error getting configuration:', err.message)
@@ -384,7 +384,7 @@ app.get('/api/configuracion', authenticateToken, (req, res) => {
   })
 })
 
-app.post('/api/configuracion', authenticateToken, (req, res) => {
+app.post('/configuracion', authenticateToken, (req, res) => {
   const { nombre_novia, nombre_novio, fecha_boda, hora_boda, lugar_boda } = req.body
 
   if (!nombre_novia || !nombre_novio || !fecha_boda || !hora_boda || !lugar_boda) {
@@ -407,7 +407,7 @@ app.post('/api/configuracion', authenticateToken, (req, res) => {
 })
 
 // Hotel Routes
-app.get('/api/hotel', authenticateToken, (req, res) => {
+app.get('/hotel', authenticateToken, (req, res) => {
   db.get('SELECT * FROM hotel ORDER BY id DESC LIMIT 1', (err, row) => {
     if (err) {
       console.error('Error getting hotel:', err.message)
@@ -417,7 +417,7 @@ app.get('/api/hotel', authenticateToken, (req, res) => {
   })
 })
 
-app.post('/api/hotel', authenticateToken, (req, res) => {
+app.post('/hotel', authenticateToken, (req, res) => {
   const { nombre, direccion, servicios_incluidos } = req.body
 
   if (!nombre || !direccion) {
@@ -440,7 +440,7 @@ app.post('/api/hotel', authenticateToken, (req, res) => {
 })
 
 // Habitaciones Routes
-app.get('/api/habitaciones', authenticateToken, (req, res) => {
+app.get('/habitaciones', authenticateToken, (req, res) => {
   db.all('SELECT * FROM habitaciones ORDER BY nombre', (err, rows) => {
     if (err) {
       console.error('Error getting rooms:', err.message)
@@ -450,7 +450,7 @@ app.get('/api/habitaciones', authenticateToken, (req, res) => {
   })
 })
 
-app.post('/api/habitaciones', authenticateToken, (req, res) => {
+app.post('/habitaciones', authenticateToken, (req, res) => {
   const { nombre, precio, capacidad, cupos_disponibles } = req.body
 
   if (!nombre || !precio || !capacidad || cupos_disponibles === undefined) {
@@ -472,7 +472,7 @@ app.post('/api/habitaciones', authenticateToken, (req, res) => {
   )
 })
 
-app.put('/api/habitaciones/:id', authenticateToken, (req, res) => {
+app.put('/habitaciones/:id', authenticateToken, (req, res) => {
   const { id } = req.params
   const { nombre, precio, capacidad, cupos_disponibles } = req.body
 
@@ -499,7 +499,7 @@ app.put('/api/habitaciones/:id', authenticateToken, (req, res) => {
   )
 })
 
-app.delete('/api/habitaciones/:id', authenticateToken, (req, res) => {
+app.delete('/habitaciones/:id', authenticateToken, (req, res) => {
   const { id } = req.params
 
   // Primero obtener el nombre de la habitación para la auditoría
@@ -539,7 +539,7 @@ app.delete('/api/habitaciones/:id', authenticateToken, (req, res) => {
 })
 
 // Invitados Routes
-app.get('/api/invitados', authenticateToken, (req, res) => {
+app.get('/invitados', authenticateToken, (req, res) => {
   const query = `
     SELECT i.*, h.nombre as habitacion_nombre, h.precio as habitacion_precio,
            COALESCE(SUM(p.monto), 0) as total_pagado
@@ -572,7 +572,7 @@ app.get('/api/invitados', authenticateToken, (req, res) => {
   })
 })
 
-app.post('/api/invitados', authenticateToken, (req, res) => {
+app.post('/invitados', authenticateToken, (req, res) => {
   const { nombre, contacto, habitacion_id } = req.body
 
   if (!nombre || !contacto) {
@@ -594,7 +594,7 @@ app.post('/api/invitados', authenticateToken, (req, res) => {
   )
 })
 
-app.put('/api/invitados/:id', authenticateToken, (req, res) => {
+app.put('/invitados/:id', authenticateToken, (req, res) => {
   const { id } = req.params
   const { nombre, contacto, habitacion_id } = req.body
 
@@ -621,7 +621,7 @@ app.put('/api/invitados/:id', authenticateToken, (req, res) => {
   )
 })
 
-app.delete('/api/invitados/:id', authenticateToken, (req, res) => {
+app.delete('/invitados/:id', authenticateToken, (req, res) => {
   const { id } = req.params
 
   // Primero obtener el nombre del invitado para la auditoría
@@ -656,7 +656,7 @@ app.delete('/api/invitados/:id', authenticateToken, (req, res) => {
   })
 })
 
-app.get('/api/invitados/:id/pagos', authenticateToken, (req, res) => {
+app.get('/invitados/:id/pagos', authenticateToken, (req, res) => {
   const { id } = req.params
 
   const query = `
@@ -677,7 +677,7 @@ app.get('/api/invitados/:id/pagos', authenticateToken, (req, res) => {
 })
 
 // Pagos Routes
-app.get('/api/pagos', authenticateToken, (req, res) => {
+app.get('/pagos', authenticateToken, (req, res) => {
   const query = `
     SELECT p.*, i.nombre as invitado_nombre
     FROM pagos p
@@ -694,7 +694,7 @@ app.get('/api/pagos', authenticateToken, (req, res) => {
   })
 })
 
-app.post('/api/pagos', authenticateToken, (req, res) => {
+app.post('/pagos', authenticateToken, (req, res) => {
   const { invitado_id, monto, metodo_pago, fecha_pago } = req.body
 
   if (!invitado_id || !monto || !metodo_pago || !fecha_pago) {
@@ -717,7 +717,7 @@ app.post('/api/pagos', authenticateToken, (req, res) => {
 })
 
 // Auditoría Routes
-app.get('/api/auditoria', authenticateToken, (req, res) => {
+app.get('/auditoria', authenticateToken, (req, res) => {
   db.all('SELECT * FROM auditoria ORDER BY fecha DESC LIMIT 100', (err, rows) => {
     if (err) {
       console.error('Error getting audit trail:', err.message)
@@ -728,7 +728,7 @@ app.get('/api/auditoria', authenticateToken, (req, res) => {
 })
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Boda Suite API is running' })
 })
 
