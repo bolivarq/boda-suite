@@ -746,13 +746,29 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Boda Suite API is running' })
 })
 
-// Export for Vercel as serverless function
-module.exports = app
+// Export handler for Vercel serverless function
+module.exports = async (req, res) => {
+  // Initialize database on each request for serverless
+  try {
+    await initializeDatabase()
+    return app(req, res)
+  } catch (error) {
+    console.error('Serverless function error:', error)
+    return res.status(500).json({ error: 'Error interno del servidor' })
+  }
+}
+
+// Export app for local development
+module.exports.app = app
 
 // For local development
 if (require.main === module) {
   const PORT = process.env.PORT || 3000
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`)
+  initializeDatabase().then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`)
+    })
+  }).catch(error => {
+    console.error('Failed to start server:', error)
   })
 }
