@@ -201,17 +201,6 @@ const registrarAuditoria = (tabla, accion, descripcion, usuarioId, usuarioEmail)
   )
 }
 
-// Middleware para inicializar base de datos
-const initializeDB = async (req, res, next) => {
-  try {
-    await initializeDatabase()
-    next()
-  } catch (error) {
-    console.error('Database initialization failed:', error)
-    res.status(500).json({ error: 'Error interno del servidor' })
-  }
-}
-
 // Middleware de autenticación
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization']
@@ -229,9 +218,6 @@ const authenticateToken = (req, res, next) => {
     next()
   })
 }
-
-// Aplicar middleware de inicialización a todas las rutas de API
-app.use('/api', initializeDB)
 
 // API Routes
 
@@ -746,20 +732,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Boda Suite API is running' })
 })
 
-// Export handler for Vercel serverless function
-module.exports = async (req, res) => {
-  // Initialize database on each request for serverless
-  try {
-    await initializeDatabase()
-    return app(req, res)
-  } catch (error) {
-    console.error('Serverless function error:', error)
-    return res.status(500).json({ error: 'Error interno del servidor' })
-  }
-}
+// Initialize database immediately for serverless
+initializeDatabase().catch(error => {
+  console.error('Database initialization failed:', error)
+})
 
-// Export app for local development
-module.exports.app = app
+// Export for Vercel serverless function
+module.exports = app
 
 // For local development
 if (require.main === module) {
