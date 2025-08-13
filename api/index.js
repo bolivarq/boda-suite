@@ -222,7 +222,7 @@ const authenticateToken = (req, res, next) => {
 // API Routes
 
 // Auth Routes
-app.post('/auth/login', (req, res) => {
+app.post('/auth/login', async (req, res) => {
   console.log('Login attempt:', { email: req.body.email, hasPassword: !!req.body.password })
   
   const { email, password } = req.body
@@ -230,6 +230,14 @@ app.post('/auth/login', (req, res) => {
   if (!email || !password) {
     console.log('Missing credentials')
     return res.status(400).json({ error: 'Email y contraseña son requeridos' })
+  }
+
+  // Ensure database is initialized
+  try {
+    await initializeDatabase()
+  } catch (error) {
+    console.error('Database initialization error:', error)
+    return res.status(500).json({ error: 'Error interno del servidor' })
   }
 
   db.get('SELECT * FROM usuarios WHERE email = ?', [email], (err, user) => {
